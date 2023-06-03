@@ -1,12 +1,26 @@
 package section6.interfaces;
 
-public class Employee implements Comparable<Employee>{
-    private final String name;
+import java.util.Date;
+import java.util.GregorianCalendar;
+
+public class Employee implements Comparable<Employee>,Cloneable{
+    private String name;
     private double salary;
+    private Date hireDay;
 
     public Employee(String name, double salary) {
         this.name = name;
         this.salary = salary;
+        hireDay = new Date();
+    }
+
+    public Employee clone() throws CloneNotSupportedException{
+        // call Object,clone()
+        Employee cloned = (Employee) super.clone();
+
+        // clone mutable fields
+        cloned.hireDay = (Date) hireDay.clone();
+        return cloned;
     }
 
     public String getName() {
@@ -15,6 +29,11 @@ public class Employee implements Comparable<Employee>{
 
     public double getSalary() {
         return salary;
+    }
+
+    public void setHireDay(int year,int month, int day){
+        Date newHireDay = new GregorianCalendar(year,month - 1, day).getTime();
+        hireDay.setTime(newHireDay.getTime() ) ;
     }
 
     public void raiseSalary(double byPercent){
@@ -33,4 +52,12 @@ public class Employee implements Comparable<Employee>{
         return Double.compare(salary, other.salary);
     }
 
+    @Override
+    public String toString() {
+        return "Employee{" +
+                "name='" + name + '\'' +
+                ", salary=" + salary +
+                ", hireDay=" + hireDay +
+                '}';
+    }
 }

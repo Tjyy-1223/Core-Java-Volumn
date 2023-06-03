@@ -198,5 +198,98 @@ Timer t = new Timer(10000,listener);
 t.start(); // 启动定时器
 ```
 
+
+
 #### 6.2.2 Comparator 接口
+
+现在假设我们希望按长度递增的顺序对字符串进行排序， 而不是按字典顺序进行排序。
+
+要处理这种情况，Arrays.sort方法还有第二个版本，传入数组和一个比较器 (comparator)作为参数，比较器是实现了Comparator接口的类的实例。
+
+```java
+public interface Comparator<T>{ 
+  int compare(T first, T second);
+}
+ 
+// 要按长度比较字符串， 可以如下定义一个实现 Comparator<String> 的类:
+class LengthComparator implements Comparator<String>{
+  public int compare(String first, String second){
+    return first.length() - second.length();
+  }
+}
+
+// 具体完成比较时，需要建立一个实例:
+Comparator<String> comp = new LengthComparator();
+if(comp.compare(words[i],words[j]) > 0) ...
+```
+
+要对一个数组排序， 需要为 Arrays.sort 方法传人一个 LengthComparator 对象:
+
+```java
+String[] friends = { "Peter", "Paul", "Mary" }; 
+Array.sort(friends, new LengthComparator()):
+```
+
+在 6.3 节中我们会了解， 利用 lambda 表达式可以更容易地使用 Comparator。
+
+
+
+#### 6.2.3 对象克隆
+
+Cloneable 接口指示一个类提供了一个安全的 clone 方法。
+
++ 为对象引用的变量建立副本时 - 原变量和副本都是同一个对象的引用
++ 如果希望 copy 是一个新对象， 它的初始状态与 original 相同， 但是之后它们各自会有自 己不同的状态， 这种情况下就可以使用 clone 方法。
+
+ clone 方法是 Object 的一个 protected 方法， 这说明你的代码不能直接调用这个方法。 换句话说，只有 Employee 类可以克隆 Employee 对象。如果想要自己的对象可以被clone，类必须：
+
++ 实现 Cloneable 接口;
++ 重新定义 clone 方法， 并指定 public 访问修饰符。
+
+> Object 类中 clone 方法声明为 protected, 所以你的代码不能直接调用 anObject. clone() 。但是， 不是所有子类都能访问受保护方法吗? 不是所有类都是 Object 的子类吗? 幸运的是， 受保护访问的规则比较微妙(见第 5 章)。子类只能调用受保护的 clone 方法来克隆它自己的对象。 必须重新定义 clone 为 public 才能允许所有方法克隆对象。
+
+Cloneable 接口的出现与接口的正常使用并没有关系。这个接口只是作为一个标记， 指示类设计者了解克隆过程。对象对于克隆很“ 偏执”， 果一个对象请求克隆， 但没有实现这个接口， 就会生成一个受査异常。
+
+>Cloneable接口是Java提供的一组标记接口 (tagginginterface)之一,有些程序员称之为记号接口。它唯一的作用就是允许 在类型查询中使用 instanceof: if (obj instanceof Cloneable) . . .
+
+**即使 clone 的默认(浅拷贝)实现能够满足要求， 还是需要实现 Cloneable 接口，将 clone 重新定义为public，再调用super.clone() 。下面给出一个例子:**
+
+如果在一个对象上调用clone, 但这个对象的类并没有实现Cloneable接口，Object类 的clone方法就会拋出一个CloneNotSupportedException()
+
+```java
+class Employee implements Cloneable{
+	// raise visibility level to public, change return type
+	public Employee clone() throws CloneNotSupportedException{
+    return (Employee) super.clone();
+  }
+}
+```
+
+下面来看创建深拷贝的 done 方法的一个例子:
+
+```java
+class Employee implements Cloneable{
+	...
+	public Employee clone() throws CloneNotSupportedException{
+    // call Object,clone()
+    Employee cloned = (Employee) super.clone();
+    
+    // clone mutable fields
+    cloned.hireDay = (Date) hireDay.clone();
+    return cloned;
+  }
+}
+```
+
+**知识点： 所有数组类型都有一个 public 的 clone 方法， 而不是 protected: 可以用这个方法建立一个新数组， 包含原数组所有元素的副本。例如:**
+
+```java
+int[] luckyNumbers = { 2, 3, 5, 7, 11, 13 }; 
+int[] cloned = luckyNumbers.done();
+cloned[5] = 12; // doesn't change luckyNumbers[5]
+```
+
+
+
+### 6.3 lambda表达式
 
