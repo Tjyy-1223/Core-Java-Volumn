@@ -639,3 +639,304 @@ Arrays.sort(people, comparing(Person::getMiddleName,nullFirst(naturalOrder())));
 + 内部类方法可以访问该类定义所在的作用域中的数据， 包括私有的数据。
 + 内部类可以对同一个包中的其他类隐藏起来。
 + 当想要定义一个回调函数且不想编写大量代码时，使用匿名(anonymous) 内部类比较便捷。
++ 内部类的对象有一个隐式引用， 它引用了实例化该内部对象的外围类对象。通过这个指针， 可以访问外围类对象的全部状态。
+
+#### 6.4.1 使用内部类访问对象状态
+
+内部类的语法比较复杂。 选择一个简单但不太实用的例子说明内部类的使用方式。 下面将进一步分析 TimerTest 示例， 并抽象出一个 TalkingClock 类。 
+
+构造一个语音时钟时需要提供两个参数: 发布通告的间隔和开关铃声的标志。
+
+```java
+public class TalkingClock{
+  private int inteval;
+  private boolean beep;
+  
+  public TalkingClock(int interval, boolean beep) {...} 
+  public void start() {
+  	ActionListener listener = new TimePrinter();
+    Timer t = new Timer(interval, listener);
+    t.start();
+  }
+  
+  public class TimePrinter implements ActionListener{
+     // an inner class
+    ...
+  }
+}
+```
+
+> 这里的 TimePrinter 类位于 TalkingClock 类内部。 这并不意味着每个 TalkingClock 都有一个TimePrinter实例域， 如前所示，嵌套是一种类之间的关系， 而不是对象之间的关系，TimePrinter对象是由TalkingClock类的方法构造。
+
+下面是 TimePrinter 类的详细内容。需要注意一点， actionPerformed 方法在发出铃声之前 检查了 beep 标志
+
+```java
+public class TimePrinter implements ActionListener{
+  public void actionPeformed(ActionEvent event){
+    System.out.println("At the tone, the time is " + new Date());
+    if(beep) Toolkit.getDefaultToolkit().beep();
+  }
+}
+```
+
+TimePrinter 类没有实例域或者名为 beep 的变量， 取而代之的是 beep 引用了创建 TimePrinter 的 TalkingClock 对象的域。 从传统意义上讲， 一个类方法可以引用调用这个方法的对象数据域。 内部类既可以访问自身的数据域， 也可以访问创建它的外围类对象的数据域.
+
+ **内部类的对象总有一个隐式引用， 它指向了创建它的外部类对象**：这个引用在内部类的定义中是不可见的，为说明概念将其称为outer；
+
+```java
+public void actionPerformed(ActionEvent event){
+  System.out.println("At the tone, the time is " + new Date());
+  if(outer.beep) Toolkit.getDefaultToolkit().beep();
+}
+```
+
+**外围类的引用在构造器中设置。** 编译器修改了所有的内部类的构造器， 添加一个外围类引用的参数。 因为 TimePrinter 类没有定义构造器， 所以编译器为这个类生成了一个默认的构造器， 其代码如下所示:
+
+```java
+public TimePrinter(TalkingClock clock){// automatically generated code
+  outer = clock; //outer不是 Java 的关键字，我们只是用它说明内部类中的机制
+} 
+
+//当在 start 方法中创建了 TimePrinter 对象后， 编译器就会将 this 引用传递给构造器:
+ActionListener listener = new TimePrinter(this); // parameter automatically added
+```
+
+TimePrinter 类声明为私有的。这样一来，只有 TalkingClock 的方法才能够构造 TimePrinter 对象。 只有内部类可以是私有类， 而常规类只可以具有包可见性，或公有可见性。 
+
+
+
+#### 6.4.2 内部类的特殊语法规则
+
+在上一节中，已经讲述了内部类有一个外围类的引用 outer 。表达式`OuterClass.this`表示外围类引用，可以如下编写TimePrinter 内部类的 actionPerformed 方法:
+
+```java
+public void actionPerformed(ActionEvent event){
+  ...
+  if(TalkingClock.this.beep) Toolkit.getDefaultToolkit().beep();
+}
+```
+
+反过来， 可以采用下列语法格式更加明确地编写内部对象的构造器:
+
+```java
+outerObject.new InnerClass(construction parameters)
+ActionListener listener = this.new TimePrinter(); // instance
+```
+
+通常， this 限定词是多余的。不过， 可以通过显式地命名将外围类引用设置为其他的对象。 例如， 如果 TimePrinter 是一个公有内部类， 对于任意的语音时钟都可以构造一个 TimePrinter
+
+```java
+TalkingClock jabberer = new Ta1kingClock(1000, true) ; 
+TalkingClock.TimePrinter listener = jabberer.new TimePrinter();
+```
+
+在外围类的作用域之外， 可以这样引用内部类:`OuterClass.InnerClass`
+
+> 内部类中声明的所有静态域都必须是 final。我们希望一个静态域只有一个实例，不过对于每个外部对象，会分别有一个单独的内部类实例。 如果这个域不是final, 它可能就不是唯一的。
+
+> 内部类不能有 static 方法。Java 语言规范对这个限制没有做任何解释。
+
+
+
+#### 6.4.3 内部类是否有用、必要和安全
+
+当在 Java 1.1 的 Java 语言中增加内部类时， 很多程序员都认为这是一项很主要的新特性， 但这却违背了 Java 要比 C++ 更加简单的设计理念。 我们并不打算就这个问题给予一个完整的答案。
+
+内部类是一种编译器现象， 与虚拟机无关，编译器将会把内部类翻译成用 $ 分隔外部类名与内部类名的常规类文件， 而虚拟机则对此一无所知。
+
+如果编译器能够自动地进行转换， 那么能不能自己编写程序实现这种机制呢? 让我们试试看。 将 TimePrinter 定义成一个常规类， 并把它置于 TalkingClock 类的外部。 在构造 TimePrinter 对象的时候， 将创建该对象的 this 指针传递给它
+
+```java
+class TalkingClock{
+	...
+	public void start(){
+  	ActionListener listener = new TimePrinter(this);
+    Timer t = new Timer(interval,listener);
+    t.start();
+  }
+}
+
+class TimePrinter implements ActionListener {
+	private TalkingClock outer;
+  ...
+  public TimePrinter(TalkingClock clock){
+    outer = clock;
+  }
+}  
+```
+
+现在， 看一下 actionPerformed 方法， 访问 outer.beep会发生报错。可见， 由于内部类拥有访问特权， 所以与常规类比较起来功能更加强大。
+
+**内部类如何管理那些额外的访问特权呢? 为了揭开这个谜团，让我们再次利用 ReflectTest 程序査看一下 TalkingClock 类:**
+
+```java
+class TalkingClock{
+  private int interval; 
+  private boolean beep;
+  
+  public TalkingClock(int, boolean);
+  static boolean access$0(TalkingClock);
+  public void start(); 
+}
+```
+
+请注意编译器在外围类添加静态方法 access$0，它将返回对象域 beep。
+
+```
+if(beep) -> if(TalkingClock.access$0(outer))
+```
+
+>  这样做不是存在安全风险吗? 这种担心是很有道理的。 任何人都可以通过调用 access$0 方法很容易地读取到私有域 beep。 熟悉类文件结构的黑客可以使用十六进制编辑器轻松地创建一个用虚拟机指令调用那个方法的类文件。 由于隐秘地访问方法需要拥有包可见性， 所以攻击代码需要与被攻击类放在同一个包中。
+
+总而言之， 如果内部类访问了私有数据域， 就有可能通过附加在外围类所在包中的其他类访问它们， 但做这些事情需要高超的技巧和极大的决心。程序员不可能无意之中就获得对类的访问权限， 而必须刻意地构建或修改类文件才有可能达到这个目的。
+
+
+
+#### 6.4.4 局部内部类
+
+如果仔细地阅读一下 TalkingClock 示例的代码就会发现， TimePrinter 这个类名字只在 start 方法中创建这个类型的对象时使用了一次。
+
+**当遇到这类情况时， 可以在一个方法中定义局部类。**
+
+```java
+public void start(){
+  class TimePrinter implements ActionListener{
+    public void actionPerforaed(ActionEvent event){
+      System.out.println("At the tone, the time is " + new Date());
+      if(beep) Toolkit.getDefaultToolkit().beep();
+    }
+  }
+  
+  ActionListener listener = new TimePrinter();
+  Timer t = new Timer(interval, listener);
+  t.start();
+}
+```
+
+**局部类不能用 public 或 private 访问说明符进行声明，它的作用域被限定在声明这个局部类的块中。**
+
+局部类有一个优势， 即对外部世界可以完全地隐藏起来。 即使 TalkingClock 类中的其他代码也不能访问它。除 start 方法之外， 没有任何方法知道 TimePrinter 类的存在。
+
+
+
+#### 6.4.5 由外部方法访问变量
+
+与其他内部类相比较， **局部类**还有一个优点。 它们不仅能够访问包含它们的外部类， 还可以访问局部变量。 不过， **那些局部变量必须为 final**。这说明， 它们一旦赋值就绝不会改变。
+
+下面是一个典型的示例，这里，将 TalkingClock 构造器的参数 interval 和 beep 移至 start 方法中。
+
+```java
+public void start(int interval, boolean beep){
+  class TimePrinter implements ActionListener{
+    public void actionPerformed(ActionEvent event){
+      System.out.println("At the tone, the time is " + new Date());
+      if(beep) Toolkit.getDefaultToolkit().beep();
+    }
+  }
+  
+  ActionListener listener = new TimePrinter();
+  Timer t = new Timer(interval, listener);
+  t.start();
+}
+```
+
+请注意， TalkingClock 类不再需要存储实例变量 beep 了， 它只是引用 start 方法中的 beep 参数变量。为了能够清楚地看到内部的问题， 让我们仔细地考査一下控制流程。
+
++ 调用 start 方法。
++ 调用内部类 TimePrinter 的构造器， 以便初始化对象变量 listener。
++ 将listener引用传递给Timer构造器，定时器开始计时，start方法结束。此时，start 方法的 beep 参数变量不复存在。
++ 然后 actionPerformed 方法执行 if (beep)...。
+
+为了能够让 actionPerformed 方法工作， TimePrinter 类在 beep 域释放之前将 beep 域用 start 方法的局部变量进行备份 `final boolean val$beep;`。 
+
+
+
+#### 6.4.6 匿名内部类
+
+将局部内部类的使用再深人一步：**假如只创建这个类的一个对象， 就不必命名了**。这种类被称为匿名内部类(anonymous inner class)。
+
+```java
+public void start(int interval, boolean beep){
+  ActionListener listener = new ActionListener(){
+    public void actionPerformed(ActionEvent event){
+      System.out.println("At the tone, the time is " + new Date());
+      if(beep) Toolkit.getDefaultToolkit().beep();
+    }
+  }
+  Timer t = new Timer(interval, listener);
+  t.start();
+}
+```
+
+这种语法确实有些难以理解，它的含义是创建一个实现 ActionListener 接口的类的新对象。通常的语法格式为:
+
+```java
+new SuperType(construction parameters){
+  inner class methods and data
+}
+```
+
+其中， SuperType 接口也可以是一个类。由于构造器的名字必须与类名相同， 而匿名类没有类名， 所以，匿名类不能有构造器。取而代之的是，将构造器参数传递给超类(superclass) 构造器。尤其是在内部类实现接口的时候，不能有任何构造参数。
+
+ Java 程序员习惯的做法是用匿名内部类实现事件监听器和其他回调。 如今最好还是使用 lambda 表达式。 例如， **前面给出的 start 方法用 lambda 表达式来写会简洁得多**:
+
+```java
+public void start(int interval, boolean beep){
+  Timer t = new Timer(interval,event->{
+    System.out.println("At the tone, the time is " + new Date());
+    if(beep) Toolkit.getDefaultToolkit().beep();
+  });
+  t.start();
+}
+```
+
+技巧：下面的技巧称为**“ 双括号初始化”(double brace initialization)**, 这里利用了内部类语法：
+
+```java
+ArrayList<String> friends = new ArrayList<>(); 
+friends.add("Harry");
+friends.add("Tony");
+invite(friends);
+```
+
+如果不再需要这个数组列表， 最好让它作为一个匿名列表：
+
+```java
+invite(new ArrayList<String>() {{ add("Harry"); add("Tony");}});
+```
+
+
+
+#### 6.4.7 静态内部类
+
+有时候，使用内部类只是为了把一个类隐藏在另外一个类的内部，并不需要内部类引用外围类对象。为此，**可以将内部类声明为static, 以便取消产生的引用。**下面是一个使用静态内部类的典型例子，考虑一下计算数组中最小值和最大值的问题。 
+
+```java
+class ArrayAlg{...
+  public static class Pair{
+    ...
+  }
+}
+```
+
+当然，只有内部类可以声明为 static。静态内部类的对象除了没有对生成它的外围类对象的引用特权外， 与其他内部类完全一样。 在我们列举的示例中， 必须使用静态内部类， 这是由于内部类对象是在静态方法中构造的:
+
+```java
+public static Pair minmax(double[] d){
+  ...
+  return new Pair(min,max);
+}
+```
+
+如果没有将 Pair 类声明为 static, 那么编译器将会给出错误报告。
+
+使用策略：
+
++ 在内部类不需要访问外围类对象的时候， 应该使用静态内部类。
++ 与常规内部类不同， 静态内部类可以有静态域和方法。
++ 声明在接口中的内部类自动成为 static 和 public 类。
+
+
+
+
+
