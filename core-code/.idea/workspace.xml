@@ -6,7 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="33d76806-c2f9-4144-8742-3c8065a92826" name="Changes" comment="section6 6.1接口">
       <change beforePath="$PROJECT_DIR$/../core-book/Section 6 接口、lambda 表达式与内部类.md" beforeDir="false" afterPath="$PROJECT_DIR$/../core-book/Section 6 接口、lambda 表达式与内部类.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/section6/lambda/LambdaTest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/section6/lambda/LambdaTest.class" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -55,20 +54,7 @@
     <property name="settings.editor.selected.configurable" value="MavenSettings" />
     <property name="vue.rearranger.settings.migration" value="true" />
   </component>
-  <component name="RunManager" selected="Application.TimerTest">
-    <configuration name="EmployeeSortTest" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="section6.interfaces.EmployeeSortTest" />
-      <module name="core-code" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="section6.interfaces.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
+  <component name="RunManager" selected="Application.ProxyTest">
     <configuration name="InnerClassTest" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="section6.innerClass.InnerClassTest" />
       <module name="core-code" />
@@ -88,6 +74,19 @@
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="section6.lambda.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="ProxyTest" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="section6.proxy.ProxyTest" />
+      <module name="core-code" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="section6.proxy.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -123,11 +122,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.ProxyTest" />
         <item itemvalue="Application.TimerTest" />
         <item itemvalue="Application.InnerClassTest" />
         <item itemvalue="Application.anonymousInnerClassTest" />
         <item itemvalue="Application.LambdaTest" />
-        <item itemvalue="Application.EmployeeSortTest" />
       </list>
     </recent_temporary>
   </component>
@@ -140,7 +139,7 @@
       <option name="presentableId" value="Default" />
       <updated>1685686936791</updated>
       <workItem from="1685686938770" duration="9217000" />
-      <workItem from="1685947719886" duration="2830000" />
+      <workItem from="1685947719886" duration="4739000" />
     </task>
     <task id="LOCAL-00001" summary="section6 6.1接口">
       <created>1685697584454</created>

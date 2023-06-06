@@ -938,5 +938,131 @@ public static Pair minmax(double[] d){
 
 
 
+### 6.5 代理
+
+**利用代理可以在运行时创建一个实现了一组给定接口的新类 : 这种功能只有在编译时无法确定需要实现哪个接口 时才有必要使用。** 对于系统程序设计人员来说， 代理带来的灵活性却十分重要。
+
+#### 6.5.1 何时使用代理
+
+假设有一个表示接口的 Class 对象，它的确切类型在编译时无法知道。要想构造一个实现这些接口的类， 就需要使用 newlnstance 方法或反射找出这个类的构造器。 但是，不能实例化一个接口，需要在程序处于运行状态时定义一个新类。
+
+>  为了解决这个问题， 有些程序将会生成代码 -> 将这些代码放置在一个文件中 -> 调用编译器 -> 然后再加载结果类文件。 很自然， 这样做的速度会比较慢， 并且需要将编译器与程序放在一起。 
+
+代理机制则是一种更好的解决方案，代理类可以在运行时创建全新的类。 这样的代理类能够实现指定的接口。 尤其是， 它具有下列方法：
+
++ 指定接口所需要的全部方法。
++ Object 类中的全部方法， 例如， toString、 equals 等。
+
+然而， **不能在运行时定义这些方法的新代码**。 而是要提供一个**调用处理器(invocation handler)**。 调用处理器是实现了 InvocationHandler 接口的类对象。 在这个接口中只有一个方法:
+
+```java
+Object invoke(Object proxy, Method method, Object[] args)
+```
 
 
+无论何时调用代理对象的方法， 调用处理器的 invoke 方法都会被调用， 并向其传递 Method 对象和原始的调用参数，调用处理器必须给出处理调用的方式。
+
+
+
+#### 6.5.2 创建代理对象
+
+要想创建一个代理对象， 需要使用 Proxy 类的 newProxylnstance 方法。 这个方法有三个参数:
+
++ 类加载器(class loader) 目前， 用 null 表示使用默认的类加载器。
++ 一个 Class 对象数组， 每个元素都是需要实现的接口。
++ 一个调用处理器。
+
+还有两个需要解决的问题。如何定义一个处理器？能够用结果代理对象做些什么？这两个问题的答案取决于打算使用代理机制解决什么问题，使用代理可能出于很多原因，例如：
+
++ 路由对远程服务器的方法调用。
++ 在程序运行期间，将用户接口事件与工作关联起来
++ 为调试、跟踪方法调用。
+
+在示例程序中， 使用代理和调用处理器跟踪方法调用， 并且定义了一个 TraceHander 包装器类存储包装的对象。 其中的 invoke 方法打印出被调用方法的名字和参数， 随后用包装好的对象作为隐式参数调用这个方法。
+
+```java
+class TraceHandler implements InvocationHandler{
+  private Object target;
+  
+  public TraceHandler(Object t){
+    target = t;
+  }
+  
+  Object invoke(Object proxy, Method m, Object[] args) throws Throwable{
+    // print method name and parameters
+		...
+    // invoke actual method
+    return m.invoke(target,args);
+  }
+}
+
+// 下面说明如何构造用于跟踪方法调用的代理对象
+Object value = ...;
+// construct wrapper
+InvocationHandler handler = new TraceHandler(value);
+// construct proxy for one or more interfaces
+Class[] interfaces = new Class[] {Comparable.class};
+Object proxy = Proxy.newProxylnstance(null, interfaces, handler);
+```
+
+现在， 无论何时用 proxy 调用某个方法， 这个方法的名字和参数就会打印出来， 之后再用 value 调用它。
+
+使用案例：使用代理对象对二分查找进行跟踪这里， 首先将用 1 ~ 1000 整数的代理填充数组， 然后调用 Arrays 类中的 binarySearch 方法在数组中查找一个 随机整数最后， 打印出与之匹配的元素。
+
+```java
+Object[] elements = new Object[1000];
+// fill elements with proxies for the integers 1 . . . 1000
+for(int i = 0;i < elements.length;i++){
+  Integer value = i + 1;
+  InvocationHandler handler = new TraceHandler(value);
+  elements[i] =  Proxy.newProxyInstance(nul1, new Class[] {Comparable.class} , handler) ; // proxy for value
+}
+
+// constrct a random integer
+Integer key = new Random().nextInt(elements.length) + 1;
+
+// search for the key
+int result = Arrays.binarySearch(elements,key);
+
+// print match if found
+if (result >= 0) System.out.println(elements[result]);
+```
+
+上述代码中，Integer 类实现了 Comparable 接口。 代理对象属于在运行时定义的类 (它有一个名字，如 $Proxy0 ) 这个类也实现了Comparable接口。然而，它的 compareTo 方法调用了代理对象处理器的 invoke 方法。
+
+binarySearch 方法按下面这种方式调用:`if (elements[i].compareTo(key) < 0) . . .`
+
+由于数组中填充了代理对象， 所以 compareTo 调用了 TraceHander 类中的 invoke 方法。 这个方法打印出了方法名和参数， 之后用包装好的 Integer 对象调用 compareTo。
+
+最后， 在示例程序的结尾调用:`System.out.println(elements[result]);`
+
+println 方法调用代理对象的 toString， 这个调用也会被重定向到调用处理器上。
+
+程序运行结果如下：
+
+```
+500.compareTo(288) 
+25O.compareTo(288) 
+375.compareTo(288) 
+312.compareTo(288) 
+281.compareTo(288) 
+296.compareTo(288) 
+288.compareTo(288) 
+288.toString()
+```
+
+ **注意， 即使不属于 Comparable 接口， toString 方法也被代理。 在下一节中会看到， 有相当一部分的 Object 方法都被代理。**
+
+
+
+#### 6.5.3 代理类的特性
+
+代理类是在程序运行过程中创建的，一旦被创建， 就变成了常规类， 与虚拟机中的任何其他 类没有什么区别。
+
+所有的代理类都属于Proxy类，一个代理类只有一个实例域——调用处理器，定义在 Proxy 的超类中。 为了履行代理对象的职责， **所需要的任何附加数据都必须存储在调用处理器中。** 例如，在程序清单 6-10 给出的程序中， 代理 Comparable 对象时， TraceHandler 包装了实际的对象。
+
++ 代理类一定是 public 和 final。如果代理类实现的所有接口都是 public，代理类就不属于某个特定的包; 否则， 所有非公有的接口都必须属于同一个包， 同时， 代理类也属于这个包。
+
++ 可以通过调用 Proxy 类中的 isProxyClass 方法检测一个特定的 Class 对象是否代表一个代理类。
+
+> 所有的代理类都覆盖了 Object 类中的方法 toString、 equals 和 hashCode。 如同所有的代理方法一样， 这些方法仅仅调用了调用处理器的 invoke。 Object 类中的其他方法 (如 clone 和 getClass) 没有被重新定义。
