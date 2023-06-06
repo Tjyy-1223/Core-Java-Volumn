@@ -1,5 +1,4 @@
 # Core-Java-Volumn
-Author:Tjyy
 The review and summary of the book - Core Java Volumn
 
 Java核心卷的回顾与总结：md文档资料及相关源码
