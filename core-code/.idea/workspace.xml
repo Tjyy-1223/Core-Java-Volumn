@@ -5,7 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="33d76806-c2f9-4144-8742-3c8065a92826" name="Changes" comment="section6 6.1接口">
-      <change beforePath="$PROJECT_DIR$/../README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../core-book/Section 7 异常、断言和日志.md" beforeDir="false" afterPath="$PROJECT_DIR$/../core-book/Section 7 异常、断言和日志.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,10 +51,13 @@
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
+    <property name="project.structure.last.edited" value="Project" />
+    <property name="project.structure.proportion" value="0.0" />
+    <property name="project.structure.side.proportion" value="0.0" />
     <property name="settings.editor.selected.configurable" value="MavenSettings" />
     <property name="vue.rearranger.settings.migration" value="true" />
   </component>
-  <component name="RunManager" selected="Application.ProxyTest">
+  <component name="RunManager" selected="Application.StackTraceTest">
     <configuration name="InnerClassTest" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="section6.innerClass.InnerClassTest" />
       <module name="core-code" />
@@ -68,12 +71,12 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="LambdaTest" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="section6.lambda.LambdaTest" />
+    <configuration name="ProxyTest" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="section6.proxy.ProxyTest" />
       <module name="core-code" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="section6.lambda.*" />
+          <option name="PATTERN" value="section6.proxy.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -81,12 +84,12 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ProxyTest" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="section6.proxy.ProxyTest" />
+    <configuration name="StackTraceTest" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="section7.stackTrace.StackTraceTest" />
       <module name="core-code" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="section6.proxy.*" />
+          <option name="PATTERN" value="section7.stackTrace.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -122,11 +125,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.StackTraceTest" />
         <item itemvalue="Application.ProxyTest" />
         <item itemvalue="Application.TimerTest" />
         <item itemvalue="Application.InnerClassTest" />
         <item itemvalue="Application.anonymousInnerClassTest" />
-        <item itemvalue="Application.LambdaTest" />
       </list>
     </recent_temporary>
   </component>
@@ -140,6 +143,7 @@
       <updated>1685686936791</updated>
       <workItem from="1685686938770" duration="9217000" />
       <workItem from="1685947719886" duration="6040000" />
+      <workItem from="1686278532406" duration="687000" />
     </task>
     <task id="LOCAL-00001" summary="section6 6.1接口">
       <created>1685697584454</created>
