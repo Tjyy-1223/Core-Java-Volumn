@@ -1,7 +1,11 @@
 # Core-Java-Volumn
-The review and summary of the book - Core Java Volumn
+📚 The review and summary of the book - Core Java Volumn
 
-Java核心卷的回顾与总结：md文档资料及相关源码
+📚 Java核心卷的回顾与总结
+
+
+
+## Java核心技术卷1 - 基础知识 原书第10版
 
 
 
@@ -13,7 +17,7 @@ Java核心卷的回顾与总结：md文档资料及相关源码
 + 6.4 内部类
 + 6.5 代理
 
-#### 🥳 第7章 异常、断言和日志
+#### 🥳 [第7章 异常、断言和日志](https://github.com/Tjyy-1223/Core-Java-Volumn/blob/main/core-book/Section%207%20%E5%BC%82%E5%B8%B8%E3%80%81%E6%96%AD%E8%A8%80%E5%92%8C%E6%97%A5%E5%BF%97.md)
 
 + 7.1 错误处理
 + 7.2 捕获异常
