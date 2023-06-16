@@ -1,7 +1,7 @@
 # Core-Java-Volumn
-📚 The review and summary of the book - Core Java Volumn
+**📚 The review and summary of the book - Core Java Volumn**
 
-📚 Java核心卷的回顾与总结
+**📚 Java核心卷的回顾与总结**
 
 
 
@@ -26,3 +26,14 @@
 + 7.5 记录日志
 + 7.6 调试技巧
 
+#### 🥳 [第8章 泛型程序设计]
+
++ 8.1 为什么要使用泛型程序设计
++ 8.2 定义简单泛型类
++ 8.3 泛型方法
++ 8.4 类型变量的限定
++ 8.5 泛型代码和虚拟机
++ 8.6 约束与局限性
++ 8.7 泛型类型的继承规则
++ 8.8 通配符类型
++ 8.9 反射和泛型

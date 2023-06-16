@@ -54,7 +54,7 @@
     <property name="project.structure.last.edited" value="Project" />
     <property name="project.structure.proportion" value="0.0" />
     <property name="project.structure.side.proportion" value="0.0" />
-    <property name="settings.editor.selected.configurable" value="MavenSettings" />
+    <property name="settings.editor.selected.configurable" value="configurable.group.language" />
     <property name="vue.rearranger.settings.migration" value="true" />
   </component>
   <component name="RunManager" selected="Application.StackTraceTest">
@@ -143,7 +143,7 @@
       <updated>1685686936791</updated>
       <workItem from="1685686938770" duration="9217000" />
       <workItem from="1685947719886" duration="6040000" />
-      <workItem from="1686278532406" duration="2499000" />
+      <workItem from="1686278532406" duration="3287000" />
     </task>
     <task id="LOCAL-00001" summary="section6 6.1接口">
       <created>1685697584454</created>
