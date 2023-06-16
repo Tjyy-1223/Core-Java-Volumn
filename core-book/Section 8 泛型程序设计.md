@@ -124,3 +124,53 @@ void setFirst(String)
 
 > 从表面上看， Java 的泛型类类似于 C++ 的模板类。唯一明显的不同是 Java 没有专用的 template 关键字。 但是， 在本章中将会看到两种机制有着本质的区别。
 
+
+
+### 8.3 泛型方法
+
+前面已经介绍了如何定义一个泛型类，实际上， 还可以定义一个带有类型参数的简单方法。
+
+```java
+class ArrayAlg{
+  public static <T> T getMiddle(T...a){
+    return a[a.length / 2];
+  }
+}
+```
+
+泛型方法可以定义在普通类中， 也可以定义在泛型类中。然而这是一个泛型方法，可以从尖括号和类型变量看出这一点。**注意，类型变量放在修饰符(这里是 public static) 的后面，返回类型的前面。**
+
+当调用一个泛型方法时，在方法名前的尖括号中放人具体的类型:
+
+```java
+String middle = ArrayAlg.<String>getMiddle("John", "Q.", "Public");
+```
+
+在大多数情况下， 方法调用中可以省略` <String> `类型参数。编译器有足够的信息能够推断出所调用的方法，它用 names 的类型与泛型类型 T[ ] 进行匹配并推断出 T 一定是 String。也就是说， 可以调用
+
+```java
+String middle = ArrayAlg.getMiddle("John", "Q.", "Public");
+```
+
+几乎在大多数情况下，对于泛型方法的类型引用没有问题。 偶尔编译器也会提示错误，此时需要解译错误报告:
+
+```java
+double middle = ArrayAlg.getMiddle(3.14, 1729, 0);
+```
+
+错误消息会以晦涩的方式指出：解释这句代码有两种方法，而且这两种方法都是合法的。
+
+>  编译器将会自动打包参数为 1 个 Double 和 2 个 Integer 对象， 而后寻找这些类的共同超类型。事实上可以找到 2 个这样的超类型: Number 和 Comparable 接口。在这种情况下，可以采取的补救措施是将所有的参数写为 double 值。
+
+如果想知道编译器对一个泛型方法调用最终推断出哪种类型， 可以有目的地引入一个错误，并研究所产生的错误消息。例如调用 `ArrayAlg.getMiddle(“ Hello”，0，null);` 将会得到一个措误报告:
+
+```
+found:
+java.1ang.0bject&java.io.Seriallzable&java.lang.Comparable<? extends java.1ang.0bject&java.io.Seriallzable&java.lang.Comparable<?>>
+```
+
+大致的意思是: 可以将结果赋值给 Object、Serialiable 或 Comparable。
+
+
+
+### 8.4 类型变量的限定
