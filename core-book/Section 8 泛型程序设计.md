@@ -83,3 +83,44 @@ AirayList 类有一个方法 addAll 用来添加另一个集合的全部元素�
 
 
 ### 8.2 定义简单泛型类
+
+**泛型类(generic class) 就是具有一个或多个类型变量的类。**本章使用一个简单的 Pair 类作为例子，我们只关注泛型，而不会为数据存储的细节烦恼。
+
+```java
+public class Pair<T>{
+  private T first; 
+  private T second;
+  
+	public Pair() { first = null ; second = null ; }
+	public Pair(T first, T second) { this.first = first; this.second = second; }
+  
+	public T getFirst() { return first; } 
+  public T getSecond() { return second; }
+  
+	public void setFirst(T newValue) { first = newValue; }
+	public void setSecond(T newValue) { second = newValue; }
+}
+```
+
+**Pair类引入了一个类型变量T**，用尖括号括起来，并放在类名的后面。泛型类可以有多个类型变量例如，可以定义 Pair 类，其中第一个域和第二个域使用不同的类型:
+
+```java
+public class Pair<T,U> { . . . }
+```
+
+类定义中的类型变量指定方法的返回类型以及域和局部变量的类型。 例如:
+
+```java
+private T first; // uses the type variable
+```
+
+用具体的类型替换类型变量就可以实例化泛型类型， 例如:
+
+```java
+Pair<String>
+void setFirst(String)
+...
+```
+
+> 从表面上看， Java 的泛型类类似于 C++ 的模板类。唯一明显的不同是 Java 没有专用的 template 关键字。 但是， 在本章中将会看到两种机制有着本质的区别。
+
