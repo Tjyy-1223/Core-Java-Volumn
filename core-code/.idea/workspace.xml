@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="33d76806-c2f9-4144-8742-3c8065a92826" name="Changes" comment="section6 6.1接口">
-      <change beforePath="$PROJECT_DIR$/../core-book/Section 8 泛型程序设计.md" beforeDir="false" afterPath="$PROJECT_DIR$/../core-book/Section 8 泛型程序设计.md" afterDir="false" />
-    </list>
+    <list default="true" id="33d76806-c2f9-4144-8742-3c8065a92826" name="Changes" comment="section6 6.1接口" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -144,7 +142,7 @@
       <workItem from="1685686938770" duration="9217000" />
       <workItem from="1685947719886" duration="6040000" />
       <workItem from="1686278532406" duration="3287000" />
-      <workItem from="1686900915956" duration="1377000" />
+      <workItem from="1686900915956" duration="2196000" />
     </task>
     <task id="LOCAL-00001" summary="section6 6.1接口">
       <created>1685697584454</created>
