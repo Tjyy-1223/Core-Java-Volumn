@@ -406,3 +406,453 @@ Dictionary<Integer, Components> labelTable = slider.getLabelTableO; // Warning
 
 
 ### 8.6 约束与局限性
+
+#### **8.6.1 不能用基本类型实例化类型参数**
+
+**不能用类型参数代替基本类型。**因此，`没有Pair<double>`, 只有`Pair<Double>`。当然，其原因是类型擦除。 擦除之后， Pair 类含有 Object 类型的域， 而 Object 不能存储 double 值。
+
+
+
+#### **8.6.2 运行时类型查询只适用于原始类型**
+
+**虚拟机中的对象总有一个特定的非泛型类型。因此， 所有的类型查询只产生原始类型。** 例如:
+
+```java
+if (a instanceof Pair<String>) // Error
+```
+
+实际上仅仅测试 a 是否是任意类型的一个 Pair。 下面的测试同样如此:
+
+```java
+if (a instanceof Pair<T>) // Error
+```
+
+或强制类型转换:
+
+```java
+ Pair<String> p = (Pair<String>) a; // Warning--can only test that a is a Pair
+```
+
+为提醒这一风险， 试图查询一个对象是否属于某个泛型类型时， **倘若使用 instanceof 会得到一个编译器错误， 如果使用强制类型转换会得到一个警告。**
+
+同样的道理， getClass 方法总是返回原始类型。 例如：
+
+```java
+Pair<String> stringPair = ...;
+Pair<Employee> employeePair = ...;
+if(stringPair.getClass() == employeePair.getClass()) // they are equal
+```
+
+其比较的结果是true, 这是因为两次调用getClass都将返回Pair.class。
+
+
+
+#### **8.6.3 不能创建参数化类型的数组**
+
+**不能实例化参数化类型的数组， 例如:**
+
+```java
+Pair<String>[] table = new Pair<String>[10]; // Error
+```
+
+这有什么问题呢? 擦除之后，table 的类型是 Pair[] 。可以把它转换为 Object[]:
+
+```java
+Object[] objarray = table;
+```
+
+数组会记住它的元素类型， 如果试图存储其他类型的元素， 就会抛出一个 Array- StoreException 异常:
+
+```java
+objarray[0] = "Hello"; // Error component type is Pair
+```
+
+ 不过对于泛型类型， 擦除会使这种机制无效。 以下赋值:
+
+```java
+ objarray[0] = new Pair<Employee>();
+```
+
+ **能够通过数组存储检査， 不过仍会导致一个类型错误。 出于这个原因， 不允许创建参数化类型的数组。**
+
+ **需要说明的是， 只是不允许创建这些数组，** 而声明类型为 `Pair<String>[]` 的变量仍是合法的。不过不能用 `new Pair<String>[10] `初始化这个变量。可以声明通配类型的数组， 然后进行类型转换:
+
+```java
+Pair<String>[] table = (Pair<String>[]) new Pair<?>[10]
+```
+
+结果将是不安全的。如果在table[0]中存储一个`Pair<Employee>`，然后对table[0].getFirst() 调用一个 String 方法， 会得到一个 ClassCastException 异常。
+
+
+
+#### **8.6.4 Varargs 警告**
+
+这一节中我们讨论一个问题：**向参数个数可变的方法传递一个泛型类型的实例。**
+
+考虑下面这个简单的方法， 它的参数个数是可变的:
+
+```java
+public static <T> void addAll(Collections<T> coll, T... ts){
+  for (t : ts) coll.add(t);
+}
+```
+
+应该记得， 实际上参数 ts 是一个数组， 包含提供的所有实参。 现在考虑以下调用:
+
+```java
+Col1ection<Pair<String>> table = . . .;
+Pair<String> pair1 = ...;
+Pair<String> pair2 = ...;
+addAll(table, pairl, pair2);
+```
+
+为了调用这个方法，Java 虚拟机必须建立一个 `Pair<String>` 数组， 这就违反了前面的规则。
+
+可以采用两种方法来抑制这个警告。 
+
+一种方法是为包含 addAll 调用的方法增加注解 @ SuppressWamings("unchecked") 或者在 Java SE 7 中， 还可 以用 @SafeVarargs 直接标注 addAll 方法:
+
+```java
+@SafeVarargs
+public static <T> void addAll(Collection<T> coll, T... ts)
+```
+
+现在就可以提供泛型类型来调用这个方法了。 对于只需要读取参数数组元素的所有方法， 都可以使用这个注解， 这仅限于最常见的用例。
+
+
+
+#### **8.6.5 不能实例化类型变置**
+
+不能使用像 new T(...) newT[...] 或 T.class 这样的表达式中的类型变量。下面的 `Pair<T>` 构造器就是非法的:
+
+```java
+public Pair() { first = new T(); second = new T(); } // Error
+```
+
+**类型擦除将 T 改变成 Object**，而且，本意肯定不希望调用 new Object()；在 Java SE 8 之后， 最好的解决办法是让调用者提供一个构造器表达式。 例如:
+
+```java
+Pair<String> p = Pair.makePair(String::new);
+```
+
+makePair 方法接收一个 `Supplier<T>`， 这是一个**函数式接口**， 表示一个无参数而且返回类型为 T 的函数:
+
+```java
+public static <T> Pair<T> makePair(Supplier<T> constr){
+  return new Pair<>(constr.get(),constr.get());
+}
+```
+
+表达式 T.class 是不合法的， 因为它会擦除为 Objectclass； 必须像下面这样设计 API 以便得 到一个 Class 对象:
+
+```java
+public static <T> Pair<T> makePair(Class<T> cl){
+  try{
+    return new Pair<>(cl.newInstance(),cl.newInstance());
+  }catch(Exception ex){return null;}
+}
+```
+
+这个方法可以按照下列方式调用:
+
+```java
+Pair<String> p = Pair.makePair(String.class);
+```
+
+注意，Class类本身是泛型。例如，String.daSS是一个Class<String> 的实例(事实上， 它是唯一的实例 。) 因此， makePair 方法能够推断出 pair 的类型。
+
+
+
+#### 8.6.6 不能构造泛型数组
+
+就像不能实例化一个泛型实例一样， 也不能实例化数组。 不过原因有所不同， 毕竟数组会填充 null 值， 构造时看上去是安全的。**不过， 数组本身也有类型， 用来监控存储在虚拟机中的数组。**这个类型会被擦除。 例如， 考虑下面的例子:
+
+```java
+public static<T extends Comparable> T[] minmax(T[] a) {
+  T[] mm = new T[2];...
+}//Error
+```
+
+**类型擦除会让这个方法永远构造 Comparable[2] 数组。**
+
+如果数组仅仅作为一个类的私有实例域， 就可以将这个数组声明为 Object[]， 并且在获取元素时进行类型转换。例如`ArrayList` 类可以这样实现:
+
+```java
+public class ArrayList<E>{
+  private Object[] elements;
+  ...
+  @SuppressWarnings("unchecked") 
+  public E get(int n) { return (E) elements[n]; }
+  public void set(int n, E e) { elements[n] = e; } // no cast needed
+}
+```
+
+实际的实现没有这么清晰:
+
+```java
+public class ArrayList<E>{
+  private E[] elements;
+  ...
+  public ArrayList() { elements = (E[]) new Object[10]; }
+}
+```
+
+**这里， 强制类型转换 E[ ] 是一个假象， 而类型擦除使其无法察觉。**由于 minmax 方法返回 T[ ] 数组， 使得这一技术无法施展， 如果掩盖这个类型会有运行时错误结果。 假设实现代码:
+
+```java
+public static <T extends Comparable〉 T[] minmax(T... a){
+  Object[] mm = new Object[2];
+  ...
+  return (T[]) mm; // compiles with warning
+}
+```
+
+调用
+
+```java
+String[] ss = ArrayAlg.minmax("Tom", "Dick", "Harry");
+```
+
+编译时不会有任何警告。 告 Object[]引用赋给 Comparable[] 变量时， 将会发生 ClassCastException 异常。
+
+**在这种情况下， 最好让用户提供一个数组构造器表达式:**
+
+```java
+String[] ss = ArrayAlg.minmax(String[]::new，"Tom", "Dick", "Harry");
+```
+
+构造器表达式 String::new 指示一个函数， 给定所需的长度， 会构造一个指定长度的 String 数组。
+
+minmax 方法使用这个参数生成一个有正确类型的数组:
+
+```java
+public static <T extends Comparable〉 T[] minmax(IntFunction<T[]> constr, T... a){
+  T[] mm = constr.apply(2);
+  ...
+}
+```
+
+**比较老式的方法是利用反射， 调用 Array.newlnstance:**
+
+```java
+public static <T extends Comparable〉 T[] minmax(T... a){
+  T[] mm = (T[]) Array.newlnstance(a.getClass().getComponentType() , 2);
+}
+```
+
+
+
+#### 8.6.7 泛型类的静态上下文中类型变量无效
+
+不能在静态域或方法中引用类型变量。例如， 下列高招将无法施展:
+
+```java
+public class Singleton<T>{
+  private static T singlelnstance; // Error
+  public static T getSinglelnstance(){ // Error
+    if (singleinstance == null) construct new instance of T
+    return singleInstance;
+  } 
+}
+```
+
+如果这个程序能够运行， 就可以声明一个 `Singleton<Random>` 共享随机数生成器， 声明 一个 `Singleton<JFileChooSer>` 共享文件选择器对话框。但是， 这个程序无法工作。**类型擦除之后， 只剩下 Singleton 类， 它只包含一个 singlelnstance 域。** 因此， 禁止使用带有类型变量的静态域和方法。
+
+
+
+#### 8.6.8 不能抛出或捕获泛型类的实例
+
+既不能抛出也不能捕获泛型类对象。 实际上， 甚至泛型类扩展 Throwable 都是不合法的。 例如， 以下定义就不能正常编译:
+
+```java
+public class Problem<T> extends Exception { /* . . . */ } // Error can't extend Throwable
+```
+
+catch 子句中不能使用类型变量。 例如， 以下方法将不能编译:
+
+```java
+public static <T extends Throwable〉 void doWork(Class<T> t){
+  try{
+    do work
+  }catch(T e) // Error can't catch type variable
+  {
+    Logger.global.info(...);
+  }
+}
+```
+
+不过， 在异常规范中使用类型变量是允许的。 以下方法是合法的:
+
+```java
+public static <T extends Throwable〉 void doWork(T t) throws T // OK
+```
+
+
+
+#### 8.6.9 可以消除对受查异常的检查
+
+Java 异常处理的一个基本原则是， 必须为所有受查异常提供一个处理器。 不过可以利用泛型消除这个限制。 关键在于以下方法:
+
+```java
+c
+```
+
+假设这个方法包含在类 Block 中， 如果调用
+
+```java
+Block.<RuntimeException>throwAs(t) ;
+```
+
+编译器就会认为 t 是一个**非受查异常**。 以下代码会把所有异常都转换为编译器所认为的非受查异常:
+
+```java
+try {
+	do work 
+}
+catch (Throwable t)
+{
+	B1ock.<RuntimeException>throwAs(t) ;
+}
+```
+
+下面把这个代码包装在一个抽象类中，用户可以覆盖 body 方法来提供一个具体的动作。 **调用 toThread 时， 会得到 Thread 类的一个对象， 它的 run 方法不会介意受查异常。**
+
+```java
+public abstract class Block{
+  public abstract void body() throws Exception;
+  
+	public Thread toTread(){
+    return new Thread(){
+      public void run(){
+        try {
+          do work 
+        }
+        catch (Throwable t)
+        {
+          B1ock.<RuntimeException>throwAs(t) ;
+        }
+      }
+    }
+  }
+  
+  @SuppressWamings("unchecked")
+  public static <T extends Throwable〉void throwAs(Throwable e) throws T {
+    throw (T) e; 
+  }
+}
+```
+
+例如， 以下程序运行了一个线程， 它会拋出一个受查异常。
+
+```java
+public class Test {
+	public static void main(String[] args) {
+		new Block() {
+			public void body() throws Exception
+			{
+				Scanner in = new Scanner(new File("ququx"), "UTF-8"); 
+        while (in.hasNext())
+					System.out.println(in.next()); }
+			}.toThread().start();
+	} 
+}
+```
+
+运行这个程序时，会得到一个栈轨迹，其中包含一个 FileNotFoundException ( 当然， 假设你没有提供一个名为 ququx 的文件 )。这有什么意义呢? **正常情况下， 你必须捕获线程 run 方法中的所有受查异常， 把它们 “ 包装” 到非受查异常中， 因为 run 方法声明为不抛出任何受查异常。**
+
+不过在这里并没有做这种“ 包装”。我们只是抛出异常，并“ 哄骗” 编译器，让它认为这不是一个受查异常。**通过使用泛型类、 擦除和 @SuppressWamings 注解， 就能消除 Java 类型系统的部分基本限制。**
+
+
+
+#### 8.6.10 注意擦除后的冲突
+
+当泛型类型被擦除时，**无法创建引发冲突的条件**。下面是一个示例。假定像下面这样将 equals 方法添加到 Pair 类中:
+
+```java
+public class Pair<T>{
+  public boolean equals(T value) { return first.equals(value) && second.equals(value); }
+  ...
+}
+```
+
+考虑一个 Pair< String>，从概念上讲， 它有两个 equals 方法 :
+
++ `boolean equals(String) // defined in Pair<T>`
++ `boolean equals(Object) // inherited from Object`
+
+方法擦除 boolean equals(T) 就是 boolean equals(Object)，与 Object.equals 方法发生冲突。
+
+当然， 补救的办法是**重新命名**引发错误的方法。 
+
+泛型规范说明还提到另外一个原则:“ **要想支持擦除的转换， 就需要强行限制一个类或类型变量不能同时成为两个接口类型的子类， 而这两个接口是同一接口的不同参数化。**” 例如， 下述代码是非法的:
+
+```java
+class Employee implements Coinparab1e<Emp1oyee> { . . . }
+class Manager extends Employee implements Comparable<Hanager> 
+{ . . . } // Error
+```
+
+Manager 会实现 Comparable< Employee> 和 Comparable< Manager> , 这是同一接口 的不同参数化。
+
+这一限制与类型擦除的关系并不十分明确。毕竟，下列非泛型版本是合法的:
+
+```java
+class Employee implements Comparable { . . . }
+class Manager extends Employee implements Comparable { . . . }
+```
+
+其原因非常微妙， 有可能与合成的桥方法产生冲突。实现了 `Comparable<X>` 的类可以获得一 个桥方法:
+
+```java
+public int compareTo(Object other) { return compareTo((X) other); }
+```
+
+对于不同类型的 X 不能有两个这样的方法。
+
+
+
+### 8.7 泛型类型的继承规则
+
+考虑一个类和一个子类， 如 Employee 和 Manager。`Pair< Manager>` 是 `Pair<Employee>` 的一个子类吗? 答案是“ 不是”， 或许人们会感到奇怪。 例如，下面的代码将不能编译成功:
+
+```java
+Manager[] topHonchos = ...;
+Pair<Employee> result = ArrayAlg.ininmax(topHonchos); // Error
+```
+
+minmax 方法返回 `Pair<Manager>`， 而不是 `Pair<Employee>`， 并且这样的赋值是不合法的。
+
+无论 S 与 T 有什么联系 (如图 8-1 所示，) 通常， `Pair<S>` 与 `Pair<T>` 并没有什么联系。
+
+![image-20230702090520921](./assets/image-20230702090520921.png)
+
+这一限制看起来过于严格， 但对于类型安全非常必要。 假设允许将 `Pair< Manager>` 转换为 `Pair<Employee>`。考虑下面代码:
+
+```java
+Pair<Manager> managerBuddies = new Pair<>(ceo, cfo);
+Pair<Employee> employeeBuddies = managerBuddies; // illegal, but suppose it wasn't 
+employeeBuddies.setFirst(lowlyEmployee) ;
+```
+
+显然， 最后一句是合法的。 但是 employeeBuddies 和 managerBuddies 引用了同样的对象。现在将CFO和一个普通员工组成一对，这是不可能的。
+
+**必须注意泛型与 Java 数组之间的重要区别。 可以将一个 Manager[] 数组賦给一个类型为 Employee[] 的变量:**
+
+```java
+Manager[] managerBuddies = {ceo, cfo};
+Employee[] employeeBuddies = managerBuddies; // OK
+```
+
+然而数组带有特别的保护，如果试图将一个低级别的雇员存储到 employeeBuddies[0] ，虚拟机将会抛出 ArrayStoreException 异常。
+
+永远可以将参数化类型转换为一个原始类型。 例如，` Pair<Employee> `是原始类型 Pair 的一个子类型。 在与遗留代码衔接时， 这个转换非常必要。**转换成原始类型之后会产生类型错误吗? 会! 看一看下面这个示例:**
+
+```java
+Pair<Manager> managerBuddies = new Pairo(ceo, cfo);
+Pair rawBuddies = managerBuddies; // OK
+rawBuddies.setFirst(new File(". . .")); // only a compile-time warning
+```
+
+最后， 泛型类可以扩展或实现其他的泛型类。 就这一点而言， 与普通的类没有什么 区别。例如，`ArrayList<T>` 类实现 `List<T>` 接口。这意味着， 一个 `ArrayList<Manager>` 可以被转换为一个 `List< Manager>`。 但是， 如前面所见， 一个 `ArrayList< Manager>` 不是一个` ArrayList <Employee>` 或 `List<Employee>`。图 8-2 展示了它们之间的联系。
+
+![image-20230702092132060](./assets/image-20230702092132060.png)
