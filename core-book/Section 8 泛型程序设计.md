@@ -1136,7 +1136,7 @@ public static <T> Pair<T> makePair(Class<T> c) throws InstantiationException, Il
 
 #### 8.9.3 虚拟机中的泛型类型信息
 
-**Java 泛型的卓越特性之一是在虚拟机中泛型类型的擦除。**令人感到奇怪的是， 擦除的类仍然保留一些泛型祖先的微弱记忆。例如， 原始的 Pair 类知道源于泛型类 Pair<T>， 即使一 个 Pair 类型的对象无法区分是由 `Pair<String>` 构造的还是由` Pair<Employee>` 构造的。
+**Java 泛型的卓越特性之一是在虚拟机中泛型类型的擦除** 令人感到奇怪的是， 擦除的类仍然保留一些泛型祖先的微弱记忆。例如， 原始的 Pair 类知道源于泛型类 Pair<T>， 即使一 个 Pair 类型的对象无法区分是由 `Pair<String>` 构造的还是由` Pair<Employee>` 构造的。
 
 类似地， 看一下方法:
 
@@ -1157,3 +1157,6 @@ public static <T extends Comparable<? super T>> T min(T[] a)
 + 这个限定类型有一个通配符参数。
 + 这个通配符参数有一个超类型限定。 
 + 这个泛型方法有一个泛型数组参数。
+
+
+
