@@ -1100,3 +1100,60 @@ public static void maxminBonus(Manager[] a, Pair<? super Manager> result){
 
 
 
+### 8.9 反射和泛型
+
+反射允许你在运行时分析任意的对象。 如果对象是泛型类的实例，关于泛型类型参数则得不到太多信息， 因为它们会被擦除。 在下面的小节中，可以了解利用反射可以获得泛型类的什么信息。
+
+#### 8.9.1 泛型 Class 类
+
+类型参数十分有用， 这是因为它允许 `Class<T> `方法的返回类型更加具有针对性。下面` Class<T> `中的方法就使用了类型参数:
+
+```java
+T newInstance()
+T cast(Object obj)
+T[] getEnumConstants()
+Class<? super T> getSuperclass()
+Constructors<T> getConstructor(C1ass... parameterTypes) 
+Constructors<T> getDeclaredConstructor(Class... parameterTypes)
+```
+
+newlnstance 方法返回一个实例， 这个实例所属的类由默认的构造器获得。它的返回类型目前被声明为 T， 其类型与` Class<T>` 描述的类相同， 这样就免除了类型转换。
+
+#### 8.9.2 使用 `Class<T>` 参数进行类型匹配
+
+有时， 匹配泛型方法中的 `Class<T>`参数的类型变量很有实用价值。下面是一 标准的示例:
+
+```java
+public static <T> Pair<T> makePair(Class<T> c) throws InstantiationException, IllegalAccessException
+{
+  return new Pair<>(c.newInstance(),c.newInstance());
+}
+```
+
+如果调用 makePair(Employee.class)
+
+`Employee.class` 是类型 `Class<Employee>` 的一个对象。makePair 方法的类型参数 T 同 Employee 匹配， 并且编译器可以推断出这个方法将返回一个 `Pair<Employee>`。
+
+#### 8.9.3 虚拟机中的泛型类型信息
+
+**Java 泛型的卓越特性之一是在虚拟机中泛型类型的擦除。**令人感到奇怪的是， 擦除的类仍然保留一些泛型祖先的微弱记忆。例如， 原始的 Pair 类知道源于泛型类 Pair<T>， 即使一 个 Pair 类型的对象无法区分是由 `Pair<String>` 构造的还是由` Pair<Employee>` 构造的。
+
+类似地， 看一下方法:
+
+```java
+public static Comparable min(Coniparable[] a)
+```
+
+这是一个泛型方法的擦除
+
+```java
+public static <T extends Comparable<? super T>> T min(T[] a)
+```
+
+可以使用反射 API 来确定:
+
++ 这个泛型方法有一个叫做 T 的类型参数。 
++ 这个类型参数有一个子类型限定， 其自身又是一个泛型类型。 
++ 这个限定类型有一个通配符参数。
++ 这个通配符参数有一个超类型限定。 
++ 这个泛型方法有一个泛型数组参数。
