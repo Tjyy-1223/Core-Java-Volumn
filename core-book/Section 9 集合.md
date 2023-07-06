@@ -559,3 +559,249 @@ for(String s : sorter): System.println(s);
 
 ### 9.3 映射 Mapping
 
+通常，我们知道某些键的信息，并想要查找与之对应的元素。映射(map) 数据结构就是为此设计的：
+
++ 映射用来存放键值对。如果提供了键，就能够查找到值。 
++ 例如，有一张关于员工信息的记录表，键为员工 ID，值为 Employee 对象。
+
+#### 9.3.1 基本映射操作
+
+**Java 类库为映射提供了两个通用的实现: HashMap 和 TreeMap，这两个类都实现了 Map 接口。**
+
++ HashMap对键进行散列。
++ TreeMap映射用键的整体顺序对元素进行排序，并将其组织成搜索树。散列或比较函数只能作用于键；与键关联的值不能进行散列或比较。
++ HashMap稍微快一些，如果不需要按照排列顺序访问键，就最好选择散列。
+
+下列代码将为存储的员工信息建立一个散列映射:
+
+```java
+Map<String, Employee> staff = new HashMap<>(); // HashMap implements Map
+Employee harry = new Employee("Harry Hacker");
+staff.put("987-98-9996",harry);
+```
+
+要想检索一个对象， 必须使用(因而， 必须记住)一个键:
+
+```java
+String id = "987-98-9996";
+e = staff.get(id); // gets harry
+```
+
+如果在映射中没有与给定键对应的信息，get 将返回 null；null 返回值可能并不方便。有时可以设置默认值，用作为映射中不存在的键，然后使用 getOrDefault 方法：
+
+```java
+Map<String, Integer> scores = ..
+int score = scores.getOrDefault(id,0); // Gets 0 if the id is not present
+```
+
+键必须是唯一的，不能对同一个键存放两个值。如果对同一个键两次调用 put 方法，第二个值就会取代第一个值。实际上，put 将返回用这个键参数存储的上一个值。
+
++ **remove 方法**用于从映射中删除给定键对应的元素。
++ size 方法用于返回映射中的元素数。 
++ **要迭代处理映射的键和值，**最容易的方法是使用 forEach 方法，可以提供一个接收键和值的 lambda 表达式，映射中的每一项会依序调用这个表达式。
+
+```java
+scores.forEach((k,v) -> 
+               System.out.println("key=" + k + ",value="  v));
+```
+
+
+
+#### 9.3.2 更新映射项
+
+**处理映射时的一个难点就是更新映射项：**
+
+正常情况下，可以得到与一个键关联的原值，完成更新，再放回更新后的值。 不过必须考虑一个特殊情况，即键第一次出现。下面使用一个映射统计一个单词在文件中出现的频度，看到一个单词(word) 时， 我们将计数器增 1，如下所示:
+
+```java
+counts.put(word,counts.get(word) + 1);
+```
+
+**这是可以的，不过有一种情况除外：**就是第一次看到 word 时。在这种情况下，get 会返回null, 因此会出现一个NullPointerException异常。**作为一个简单的补救，可以使用 getOrDefault 方法：**
+
+```java
+counts.put(word, counts.getOrDefault(word, 0) + 1);
+```
+
+另一种方法是首先调用 putlfAbsent 方法，只有当键原先存在时才会放入一个值：
+
+```java
+counts.putlfAbsent(word, 0);
+counts.put(word, counts.get(word) + 1); // Now we know that get will succeed
+```
+
+**不过还可以做得更好，merge方法可以简化这个常见的操作。如果键原先不存在，下面的调用:**
+
+```java
+counts.merge(word, 1, Integer::sum);
+```
+
+将把 word 与 1 关联， 否则使用 Integer::sum 函数组合原值和 1 (也就是将原值与1求和) 
+
+
+
+#### 9.3.3 映射视图
+
+集合框架不认为映射本身是一个集合；其他数据结构框架认为映射是一个键 / 值对集合，或者是由键索引的值集合。**不过， 可以得到映射的视图(View) ：这是实现了 Collection 接口或某个子接口的对象。**
+
+有 3 种视图：键集、值集合以及键 / 值对集。下面的方法分别返回这三种视图：
+
+```java
+Set<K> keySet()
+Collection<V> values() 
+Set<Map.Entry<K, V>> entrySet()
+```
+
+需要说明的是，keySet 不是 HashSet 或 TreeSet，而是实现了 Set 接口的另外某个类的对象。 Set 接口扩展了 Collection 接口，因此可以像使用集合一样使用 keySet。
+
+例如，可以枚举一个映射的所有键：
+
+```java
+Set<String> keys = map.keySet(); 
+for (String key : keys){
+	do something with key 
+}
+```
+
+如果想同时查看键和值，可以通过枚举条目来避免查找值，使用以下代码：
+
+```java
+for (Map.Entry<String, Employee> entry : staff.entrySet()){
+  String k = entry.getKey();
+  Employee v = entry.getValue();
+  do something with k, v
+}
+```
+
+**关于上面的代码，原先这是访问所有映射条目的最高效的方法。如今，只需要使用 forEach 方法:**
+
+```java
+counts.forEach((k，v) -> {
+  do something with k,v
+});
+```
+
+**特别注意：**
+
++ 在键集视图上调用迭代器的 remove 方法， 实际上会从映射中删除这个键和与它关联的值。 
++ **不能向键集视图增加元素；如果增加一个键而没有同时增加值也是没有意义的** ；如果试图调用 add 方法， 它会抛出一个 UnsupportedOperationException。 
++ 条目集视图有同样的限制， 尽管理论上增加一个新的键 / 值对好像是有意义的。
+
+
+
+#### **9.3.4 弱散列映射**
+
+设计 WeakHashMap 类是为了解决一个有趣的问题： **如果有一个值，对应的键已经不再使用了，将会出现什么情况呢？**
+
+> 假定对某个键的最后一次引用已经消亡，不再有任何途径引用这个值的对象了。但是，由于在程序中的任何部分没有再出现这个键，所以，这个键 / 值对无法从映射中删除。为什么垃圾回收器不能够删除它呢？难道删除无用的对象不是垃圾回收器的工作吗？
+
+遗憾的是， 事情没有这样简单，垃圾回收器跟踪活动的对象。只要映射对象是活动的，其中的所有桶也是活动的，它们不能被回收。 **因此，需要由程序负责从长期存活的映射表中删除那些无用的值，或者使用 WeakHashMap 完成这件事情**。当对键的唯一引用来自散列条目时，这一数据结构将与垃圾回收器协同工作一起删除键 / 值对。
+
+下面是这种机制的内部运行情况。WeakHashMap使用弱引用(weak references) 保存键：
+
++ WeakReference 对象将引用保存到另外一个对象中，在这里，就是散列键。 对于这种类型的对象， 垃圾回收器用一种特有的方式进行处理。通常， 如果垃圾回收器发现散列值已经没有他人引用了， 就将其回收。
++ 如果某个对象只能由 WeakReference 引用，垃圾回收器仍然回收它，但要将引用这个对象的弱引用放入队列中。WeakHashMap 将周期性地检查队列，以便找出新添加的弱引用。
++ 弱引用进入队列意味着这个键不再被他人使用，并且已经被收集起来，WeakHashMap 将删除对应的条目。
+
+
+
+#### 9.3.5 链接散列集与映射
+
+**LinkedHashSet 和 LinkedHashMap类用来记住插入元素项的顺序。**这样就可以避免在散列表中的项从表面上看是随机排列的。当条目插入到表中时，就会并入到双向链表中：
+
+![image-20230706201315381](./assets/image-20230706201315381.png)
+
+例如， 在程序清单 9-6 中包含下列映射表插入的处理:
+
+```java
+Map<String, Employee> staff = new LinkedHashMap<>(); 
+staff.put("144-25-5464", new Employee("Amy Lee")); 
+staff.put("567-24-2546", new Employee("Harry Hacker")); 
+staff.put("157-62-7935", new Employee("Gary Cooper")); 
+staff.put("456-62-5527", new Employee("Francesca Cruz"));
+```
+
+然后， staff.keySet().iterator() 以下面的次序枚举键:
+
+```
+144-25-5464 
+567-24-2546 
+157-62-7935 
+456-62-5527
+```
+
+**如果想让链接散列映射使用访问顺序，而不是插入顺序，对映射条目进行迭代。**
+
++ 每次调用 get 或 put，受到影响的条目将从当前的位置删除，并放到条目链表的尾部（只有条目在链表中的位 置会受影响，而散列表中的桶不会受影响，一个条目总位于与键散列码对应的桶中)。
++ 要项构造这样一个的散列映射表， 请调用：
+
+```java
+LinkedHashMap<K, V>(initialCapacity, loadFactor, true)
+```
+
+**访问顺序对于实现高速缓存的“ 最近最少使用”原则十分重要。**例如，可能希望将访问频率高的元素放在内存中，而访问频率低的元素则从数据库中读取。当在表中找不到元素项且表又已经满时，可以将枚举的前几个元素删除掉，这些是近期最少使用的几个元素。
+
+**甚至可以让上述过程自动化，即构造一个 LinkedHashMap 的子类，然后覆盖下面这个方法:**
+
+```java
+protected boolean removeEldestEntry(Map.Entry<K，V> eldest)
+```
+
+每当方法返回 true 时，就表示添加一个新条目，从而导致删除 eldest 条目。例如，下面的高速缓存可以存放 100 个元素:
+
+```java
+Map<K, V> cache = new LinkedHashMap<>(128,0.75F,true){
+  protected boolean removeEldestEntry(Map.Entry<K，V> eldest){
+    return size() > 0;
+  }
+}();
+```
+
+另外还可以对 eldest 条目进行评估，以此决定是否应该将它删除。例如，可以检査与这个条目一起存在的时间戳。
+
+
+
+#### 9.3.6 枚举集与映射
+
+**EmimSet 是一个枚举类型元素集的高效实现。** 由于枚举类型只有有限个实例，所以 EnumSet 内部用**位序列**实现，如果对应的值在集中，则相应的位被置为 1。
+
+EnumSet 类没有公共的构造器，可以使用静态工厂方法构造这个集:
+
+```java
+enum Weekday { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY };
+EnumSet<Weekday> always = EnumSet.allOf(Weekday.class);
+EnumSet<Weekday> never = EnumSet.noneOf(Weekday.class);
+EnumSet<Weekday> workday = EnumSet.range(Weekday.MONDAY,Weekday.FRIDAY);
+EnumSet<Weekday> mwf = EnumSet.of(Weekday.MONDAY, Weekday.WEDNESDAY ,Weekday.FRIDAY);
+```
+
+可以使用 Set 接口的常用方法来修改 EnumSet。
+
+EnumMap 是一个键类型为枚举类型的映射，它可以直接且高效地用一个值数组实现。在使用时，需要在构造器中指定键类型:
+
+```java
+EnumMap<Weekday, Employee> personInCharge = new EnumMap<>(Weekday.class);
+```
+
+> 在 EnumSet 的 API 文档中，将会看到 Eextends Enum<E> 这样奇怪的类型参数。简单地说，它的意思是  E 是一个枚举类型，所有的枚举类型都扩展于泛型 Enum 类。 例如 Weekday 扩展 Enum<Weekday>。
+
+
+
+#### 9.3.7 标识散列映射
+
+**IdentityHashMap 有特殊的作用：** 
+
++ 键的散列值不是用 hashCode 函数计算的，而是用 System.identityHashCode 方法计算的，这是 Object.hashCode 方法根据对象的内存地址来计算散列码时所使用的方式。
++ 对两个对象进行比较时，IdentityHashMap 类使用 == ，而不使用 equals，也就是说不同的键对象，即使内容相同， 也被视为是不同的对象。 
++ 在实现对象遍历算法 （如对象串形化）时这个类非常有用，可以用来跟踪每个对象的遍历状况。
+
+
+
+### 9.4 视图与包装器
+
+看一下图 9-4 和图 9-5 可能会感觉: 用如此多的接口和抽象类来实现数量并不多的具 体集合类似乎没有太大必要。 然而， 这两张图并没有展示出全部的情况。 通过使用视图 ( views ) 可以获得其他的实现了 Collection 接口和 Map 接口的对象。 映射类的 keySet 方法就 是一个这样的示例。 初看起来， 好像这个方法创建了一个新集， 并将映射中的所有键都填进 去， 然后返回这个集。但是， 情况并非如此。 取而代之的是: keySet 方法返回一个实现 Set 接口的类对象， 这个类的方法对原映射进行操作。这种集合称为视图。
+
+视图技术在集框架中有许多非常有用的应用。 下面将讨论这些应用。
+
+#### 9.4.1 轻量级集合包装器
+
