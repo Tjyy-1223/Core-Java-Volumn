@@ -557,11 +557,11 @@ for(String s : sorter): System.println(s);
 
 
 
-### 9.3 映射 Mapping
+### 9.3 映射 Map
 
 通常，我们知道某些键的信息，并想要查找与之对应的元素。映射(map) 数据结构就是为此设计的：
 
-+ 映射用来存放键值对。如果提供了键，就能够查找到值。 
++ **映射用来存放键值对。如果提供了键，就能够查找到值。** 
 + 例如，有一张关于员工信息的记录表，键为员工 ID，值为 Employee 对象。
 
 #### 9.3.1 基本映射操作
@@ -799,9 +799,208 @@ EnumMap<Weekday, Employee> personInCharge = new EnumMap<>(Weekday.class);
 
 ### 9.4 视图与包装器
 
-看一下图 9-4 和图 9-5 可能会感觉: 用如此多的接口和抽象类来实现数量并不多的具 体集合类似乎没有太大必要。 然而， 这两张图并没有展示出全部的情况。 通过使用视图 ( views ) 可以获得其他的实现了 Collection 接口和 Map 接口的对象。 映射类的 keySet 方法就 是一个这样的示例。 初看起来， 好像这个方法创建了一个新集， 并将映射中的所有键都填进 去， 然后返回这个集。但是， 情况并非如此。 取而代之的是: keySet 方法返回一个实现 Set 接口的类对象， 这个类的方法对原映射进行操作。这种集合称为视图。
+**通过使用视图 ( views ) 可以获得其他实现了 Collection 接口和 Map 接口的对象，映射类的 keySet 方法就是一个这样的示例。**  
 
-视图技术在集框架中有许多非常有用的应用。 下面将讨论这些应用。
++ 初看起来，好像这个方法创建了一个新集，并将映射中的所有键都填进去，然后返回这个集。
++ 但是情况并非如此： keySet 方法返回一个实现 Set 接口的类对象，**这个类的方法对原映射进行操作**，这种集合称为视图。
+
+视图技术在集框架中有许多非常有用的应用，下面将讨论这些应用。
 
 #### 9.4.1 轻量级集合包装器
+
+**Arrays 类的静态方法 asList 将返回一个包装了普通 Java 数组的 List 包装器**，这个方法可以将数组传递给一个期望得到列表或集合参数的方法，例如:
+
+```java
+Card[] cardDeck = new Card[52];
+...
+List<Card> cardList = Arrays.asList(cardDeck);
+```
+
+**返回的对象不是 ArrayList 而是一个视图对象，带有访问底层数组的 get 和 set 方法。**改变数组大小的所有方法 (例如， 与迭代器相关的 add 和 remove 方法）都会抛出一个 Unsupported OperationException 异常。
+
+asList 方法可以接收可变数目的参数，例如:
+
+```java
+List<String> names = Arrays.asList("Amy", "Bob", "Carl");
+```
+
+这个方法调用:
+
+```java
+Col1ections.nCopies(n, anObject)
+```
+
+**将返回一个实现了 List 接口的不可修改的对象，** 并给人一种包含 n 个元素，每个元素都像是一个 anObject 的错觉。例如，下面的调用将创建一个包含100个字符串的List，每个串都被设置为 "DEFAULT"：
+
+```java
+List<String> settings = Collections.nCopies(100, "DEFAULT") ;
+```
+
+存储代价很小，这是视图技术的一种巧妙应用。
+
+> Collections 类包含很多实用方法，这些方法的参数和返回值都是集合，不要与 Collection 接口混淆起来。
+
+如果调用下列方法：
+
+```java
+Collections.singleton(anObject)
+```
+
+则将返回一个视图对象。这个对象实现了 Set 接口，**返回的对象实现了一个不可修改的单元素集**，而不需要付出建立数据结构的开销，singletonList 方法与 singletonMap 方法类似。
+
+类似地，对于集合框架中的每一个接口，还有一些方法可以生成空集、列表、映射等等。 集的类型可以推导得出:
+
+```java
+Set<String> deepThoughts = Col1ections.emptySet();
+```
+
+
+
+#### 9.4.2 子范围
+
+**可以为很多集合建立子范围(subrange) 视图。 **例如，假设有一个列表 staff，想从中取出第 10 个 - 第 19 个元素，可以使用 subList 方法来获得一个列表的子范围视图（前闭后开）：
+
+```java
+List group2 = staff.subList(10, 20);
+```
+
+可以将任何操作应用于子范围，并且能够自动地反映整个列表的情况。例如可以删除整个子范围:
+
+```java
+group2.clear(); // staff reduction
+```
+
+现在，元素自动地从 staff 列表中清除了，并且 group2 为空（视图会改变原数组）。
+
+**对于有序集和映射，**可以使用排序顺序而不是元素位置建立子范围，SortedSet 接口声明了 3 个方法:
+
+```java
+SortedSet<E> subSet(E from, E to) 
+SortedSet<E> headSet(E to)
+SortedSet<E> tailSet(E from)
+```
+
+这些方法将返回大于等于 from 且小于 to 的所有元素子集，有序映射也有类似的方法:
+
+```java
+SortedMap<K, V> subMap(K from, K to) 
+SortedMap<K, V> headMap(K to) 
+SortedMap<K, V> tailMap(K from)
+```
+
+**返回映射视图，该映射包含键落在指定范围内的所有元素。 ** Java SE 6 引人的 NavigableSet 接口赋予子范围操作更多的控制能力。可以指定是否包括边界:
+
+```java
+NavigableSet<E> subSet(E from, boolean fromlnclusive, E to, boolean tolnclusive) NavigableSet<E> headSet(E to, boolean tolnclusive)
+Navigab1eSet<E> tailSet(E from, boolean fromlnclusive)
+```
+
+
+
+#### 9.4.3 不可修改的视图
+
+**Collections 还有几个方法， 用于产生集合的不可修改视图 ( unmodifiable views )**。 这些视图对现有集合增加了一个运行时的检查，如果发现试图对集合进行修改，就抛出一个异常，同时这个集合将保持未修改的状态。
+
+可以使用下面 8 种方法获得不可修改视图:
+
+![image-20230706211631001](/Users/tianjiangyu/MyStudy/Java体系/Java/Java核心技术卷/core-book/assets/image-20230706211631001.png)
+
+每个方法都定义于一个接口。例如，Collections.unmodifiableList 与 ArrayList、 LinkedList 或者任何实现了 List 接口的其他类一起协同工作。
+
+**假设想要查看某部分代码，但又不触及某个集合的内容，就可以进行下列操作:**
+
+```java
+List<String> staff = new LinkedList<>();
+...
+lookAt(Collections.unmodifiableList(staff));
+```
+
+**Collections.unmodifiableList 方法将返回一个实现 List 接口的类对象，其访问器方法将从staff 集合中获取值。**lookAt 方法可以调用 List 接口中的所有方法，而不只是访问器。 但是所有的更改器方法已经被重新定义为抛出一个 UnsupportedOperationException 异常，而不是将调用传递给底层集合。
+
++ 不可修改视图并不是集合本身不可修改，仍然可以通过集合的原始引用(在这里是 staff) 对集合进行修改，并且仍然可以让集合的元素调用更改器方法。
++ **由于视图只是包装了接口而不是实际的集合对象，所以只能访问接口中定义的方法**。例如，LinkedList类有一些非常方便的方法，addFirst和addLast，但是它们都不是List接口的方法，所以不能通过不可修改视图进行访问。
+
+unmodifiableCollection 方法（与本节稍后讨论的 synchronizedCollection 和 checked Collection 方法一样）将返回一个集合，它的 equals 方法不调用底层集合的 equals 方法。**相反，它继承了 Object 类的 equals 方法，这个方法只是检测两个对象是否是同一个对象。** 
+
+**如果将集或列表转换成集合， 就再也无法检测其内容是否相同了。 **视图就是以这种方式运行的，因为内容是否相等的检测在分层结构的这一层上没有定义妥当。 视图将以同样的方式处理 hashCode 方法，然而， unmodifiableSet 类和 unmodifiableList 类却使用底层集合的 equals 方法和 hashCode 方法。
+
+
+
+#### 9.4.4 同步视图
+
+**如果由多个线程访问集合，就必须确保集不会被意外地破坏**。 例如：如果一个线程试图将元素添加到散列表中， 同时另一个线程正在对散列表进行再散列，其结果将是灾难性的。
+
+**类库的设计者使用视图机制来确保常规集合的线程安全， 而不是实现线程安全的集合类：**例如 Collections 类的静态 synchronizedMap 方法可以将任何一个映射表转换成具有同步访问方法的 Map.
+
+```java
+Map<String, Employee> map = Collections.synchronizedMap(new HashMap<String, Employee>());
+```
+
+现在，就可以由多线程访问 map 对象了。像 get 和 put 这类方法都是同步操作的，即在另一个线程调用另一个方法之前，刚才的方法调用必须彻底完成。 第 14 章将会详细地讨论数据结构的同步访问。
+
+
+
+#### 9.4.5 受查视图
+
+**受査视图用来对泛型类型发生问题时提供调试支持。** 如同第 8 章中所述，实际上将错误类型的元素混入泛型集合中的问题极有可能发生。例如:
+
+```java
+ArrayList<String> strings = new ArrayList<>();
+// warning only, not an error, for compatibility with legacy code
+ArrayList rawList = strings; 
+rawList.add(new Date()); // now strings contains a Date object!
+```
+
+这个错误的 add 命令在运行时检测不到。相反，只有在稍后的另一部分代码中调用 get 方法， 并将结果转化为 String 时，这个类才会抛出异常。
+
+受査视图可以探测到这类问题，下面定义了一个安全列表:
+
+```java
+List<String> safeStrings = Collections.checkedList(strings，String.class);
+```
+
+视图的 add 方法将检测插人的对象是否属于给定的类。 如果不属于给定的类， 就立即抛出一个 ClassCastException。这样做的好处是错误可以在正确的位置得以报告:
+
+```java
+ArrayList rawList = safestrings; 
+rawList.add(new Date()); // checked list throws a ClassCastException
+```
+
+> 受查视图受限于虚拟机可以运行的运行时检查。例如，对于 `ArrayList <Pair<String>>`, 由于虚拟机有一个单独的“ 原始” `Pair`类，所以，无法阻止插入`Pair<Date>`。
+
+
+
+#### 9.4.6 关于可选操作的说明
+
+通常视图有一些局限性，即可能只可以读、无法改变大小、只支持删除而不支持插入，这些与映射的键视图情况相同。 如果试图进行不恰当的操作， 受限制的视图就会抛出异常UnsupportedOperationException。
+
+在集合和迭代器接口的API文档中，许多方法描述为“ 可选操作”。这看起来与接口的概念有所抵触。 毕竟，接口的设计目的难道不是负责给出一个类必须实现的方法吗？
+
++ 从理论的角度看， 在这里给出的方法很难令人满意。 一个更好的解决方案是为每个只读视图和不能改变集合大小的视图建立各自独立的两个接口。 不过， 这将会使接口的数量成倍增长，这让类库设计者无法接受。
+
+集合类库的设计者必须解决一组特别严格且又相互冲突的需求。 
+
++ 用户希望类库应该易于学习、使用方便，彻底泛型化，面向通用性，同时又与手写算法一样高效。
++ 同时达到所有目标的要求， 或者尽量兼顾所有目标完全是不可能的。
++ 在自己的编程问题中， 应该能够找到一种不必依靠极端衡量可选接口操作来解决这类问题的方案。
+
+
+
+### 9.5 算法
+
+**泛型集合接口有一个很大的优点，即算法只需要实现一次。** 例如，考虑一下计算集合中 最大元素这样一个简单的算法。使用传统方式，程序设计人员可能会用循环实现这个算法，下面就是找出数组中最大元素的代码：
+
+```java
+if (a.length == 0) throw new NoSuchElementException();
+T largest = a[0];
+for (int i = 1; i < a.length; i++)
+  if (largest.compareTo(a[i]) < 0)
+    largest = a[i];
+```
+
+当然， 为找出**List**中的最大元素所编写的代码会与此稍有差别：
+
+```java
+
+```
 
