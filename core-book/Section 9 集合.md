@@ -988,6 +988,8 @@ rawList.add(new Date()); // checked list throws a ClassCastException
 
 ### 9.5 算法
 
+#### 9.5.0 泛型接口的作用
+
 **泛型集合接口有一个很大的优点，即算法只需要实现一次。** 例如，考虑一下计算集合中 最大元素这样一个简单的算法。使用传统方式，程序设计人员可能会用循环实现这个算法，下面就是找出数组中最大元素的代码：
 
 ```java
@@ -1001,6 +1003,407 @@ for (int i = 1; i < a.length; i++)
 当然， 为找出**List**中的最大元素所编写的代码会与此稍有差别：
 
 ```java
-
+if (v.size() == 0) throw new NoSuchElementException();
+T largest = v.get(0);
+for (int i = 1; i < v.size(); i++)
+  if (largest.compareTo(v.get(i)) < 0)
+    largest = v.get(i);
 ```
 
+**链表应该怎么做呢？对于链表来说，无法实施高效的随机访问，但却可以使用迭代器：**
+
+```java
+if (l.isEmpty()) throw new NoSuchElementException():
+Iterator<T> iter = l.iterator();
+T largest = iter.next();
+while (iter.hasNext()){
+  T next = iter.next();
+  if(largest.compareTo(next) < 0)
+    largest = next;
+}
+```
+
+编写这些循环代码有些乏味， 并且也很容易出错。是否存在严重错误吗? 对于空容器循环能正常工作吗? 对于只含有一个元素的容器又会发生什么情况呢? 我们不希望每次都测试和调试这些代码，也不想实现下面这一系列的方法:
+
+```java
+static <T extends Comparable> T max(T[] a)
+static <T extends Comparable> T max(ArrayList<T> v) 
+static <T extends Comparable> T max(LinkedList<T> l)
+```
+
+**这正是集合接口的用武之地。** 仔细考虑一下，为了高效地使用这个算法所需要的最小集合接口，采用 get 和 set 方法进行随机访问要比直接迭代层次髙。在计算链表中最大元素的过程中已经看到，这项任务并不需要进行随机访问。直接用迭代器遍历每个元素就可以计算最大元素。
+
+**因此，可以将 max 方法实现为能够接收任何实现了 Collection 接口的对象：**
+
+```java
+public static <T extends Comparable> T max(Collections c){
+  if(c.isEmpty) throw new NoSuchElementException();
+  Iterator<T> iter = c.iterator();
+	T largest = iter.next();
+  while(iter.hasNext()){
+    T next = iter.next();
+  	if(largest.compareTo(next) < 0)
+    	largest = next;
+  }
+  return largest;
+}
+```
+
+现在就可以使用一个方法计算链表、数组列表或数组中最大元素了。
+
+
+
+#### 9.5.1 排序与混排
+
+如今排序算法已经成为大多数编程语言标准库中的一个组成部分， Java 也不例外。Collections 类中的 sort 方法可以**对实现了 List 接口的集合进行排序**：
+
+```java
+List<String> staff = new LinkedList<>();
+fill collection
+Collections.sort(staff);
+```
+
+这个方法假定列表元素实现了 Comparable 接口。 **如果想采用其他方式对列表进行排序**，可以使用 List 接口的 sort 方法并传入一个 Comparator 对象。可以如下按工资对一个员工列表排序 ：
+
+```java
+staff.sort(Comparator.comparingDouble(Employee::getSalary));
+```
+
+**如果想按照降序对列表进行排序**，可以使用静态方法 Collections.reverseOrder() 。这个方法将返回一个比较器， 比较器则返回 b.compareTo(a)：
+
+```java
+staff.sort(Comparator.reverseOrder())
+```
+
+同样，如果想按照工资水平进行逆序排序：
+
+```java
+staff.sort(Comparator.comparingDouble(Employee::getSalary).reversed());
+```
+
+sort 方法所采用的排序手段：
+
++ 通常，排序算法介绍的都是有关数组的排序算法， 而且使用的是随机访问方式。
++ 对列表List进行随机访问的效率很低。实际上，可以使用归并排序对列表进行高效的排序。 然而， Java 程序设计语言并不是这样实现的：**它直接将所有元素转人一个数组，对数组进行排序，再将排序后的序列复制回列表。**
+
+**为什么使用归并算法而不使用快排算法：**
+
+集合类库中使用的排序算法比快速排序要慢一些，快速排序是通用排序算法的传统选择。但是，归并排序有一个主要的优点：稳定，即不需要交换相同的元素。为什么要关注相同元素的顺序呢? 下面是一种常见的情况。假设有一个已经按照姓名排列的员工列表。现在，要按照工资再进行排序。如果两个雇员的工资相等发生什么情况呢：如果采用稳定的排序算法，将会保留按名字排列的顺序。排序的结果将会产生这样一个列表，首先按照工资排序，工资相同者再按照姓名排序。
+
+**因为集合不需要实现所有的可选方法，因此，所有接受集合参数的方法必须描述什么时候可以安全地将集合传递给算法。**例如， 显然不能将 unmodifiableList 列表传递给排序算法。 可以传递什么类型的列表呢？
+
+**根据文档说明， 列表必须是可修改的，但不必是可以改变大小的。**
+
++ 如果列表支持 set 方法， 则是可修改的。
++ 如果列表支持 add 和 remove 方法， 则是可改变大小的。
+
+Collections类有一个算法shuffle, 其功能与排序刚好相反，**即随机地混排列表中元素的顺序**。 例如:
+
+```java
+ArrayList<Card> cards = ...;
+Collections.shuffle(cards);
+```
+
+**原理：**如果提供的列表没有实现 RandomAccess 接口， shuffle 方法将元素复制到数组中， 然后打乱数组元素的顺序，最后再将打乱顺序后的元素复制回列表。
+
+
+
+#### 9.5.2 二分查找
+
+**如果数组是有序的，就可以直接査看位于数组中间的元素:**
+
++ 如果中间数据大于要查找的元素，用同样的方法在数组的前半部分继续查找; 
++ 用同样的方法在数组的后半部分继续查找。 
+
+Collections 类的 binarySearch 方法实现了这个算法。**注意，集合必须是排好序的，否则 算法将返回错误的答案。**  要想查找某个元素：
+
++ 必须提供集合(这个集合要实现 List 接口)以及要查找的元素。
++ 如果集合没有采用 Comparable 接口的 compareTo 方法进行排序， 就还要提供一个比较器对象。
+
+```java
+i = Collections.binarySearch(c, element) ;
+i = Collections.binarySearch(c, element, comparator);
+```
+
+如果 binarySearch 方法返回的数值大于等于 0 , 则表示匹配对象的索引；如果返回负值，则表示没有匹配的元素。但是，**可以利用返回值计算应该将 element 插人到集合的哪个位置，以保持集合的有序性，插入的位置是：**
+
+```java
+insertionPoint = -i -1;
+```
+
+也就是说，下面这个操作:
+
+```java
+if (i < 0)
+  c.add(-i -1, element);
+```
+
+将把元素插人到正确的位置上。
+
+只有采用随机访问二分査找才有意义。如果必须利用迭代方式来找到中间位置的元素，二分査找就完全失去了优势。**因此，如果为 binarySearch 算法提供一个链表， 它将自动地变为线性查找。**
+
+
+
+#### 9.5.3 简单算法
+
+在 Collections 类中包含了几个简单且很有用的算法。
+
++ 查找集合中最大元素
++ 将一个列表中的元素复制到另外一个列表中
++ 用一个常量值填充容器
++ 逆置一个列表的元素顺序
+
+它们可以让程序员阅读算法变成一件轻松的事情，在看到诸如 Collections.max 这样的方法调用时，一定会立刻明白其用途。例如下面这个循环:
+
+```java
+for (int i = 0; i < words.size(); i++)
+	if (words.get(i).equals("C++")) words.set(i,"Java");
+```
+
+现在将这个循环与以下调用比较:
+
+```java
+Collections.repiaceAll("C++", "Java");
+```
+
+看到这个方法调用时，马上就能知道这个代码要做什么。
+
+ Java SE 8 增加了默认方法 **Collection.removelf** 和 **List.replaceAll**，这两个方法稍有些复杂。 要提供一个 lambda 表达式来测试或转换元素。下面的代码将删除所有短词， 并把其余单词改为小写:
+
+```java
+words.removelf(w -> w.length() <= 3); 
+words.replaceAl1(String::toLowerCase);
+```
+
+**下面给出了一些其他的简单算法接口：**
+
+<img src="./assets/image-20230708090344959.png" alt="image-20230708090344959" style="zoom:80%;" />
+
+
+
+#### 9.5.4 批操作
+
+很多操作会成批复制或删除元素。以下调用:
+
+```java
+coll1.removeAll(coll2);
+```
+
+将从 coll1 中删除 coll2 中出现的所有元素。与之相反，
+
+```java
+coll1.retainAll(coll2) ;
+```
+
+会从 coll1 中删除所有未在 coll2 中出现的元素。假设希望找出两个集的交集 ( intersection)：
+
+```java
+Set<String> result = new HashSet<>(a);
+result.retainAll(b);
+```
+
+**这会保留恰好也在 b 中出现的所有元素；这样就构成了交集，而无需编写循环。**
+
+**可以把这个思路更进一步，对视图应用一个批操作。 **例如，假设有一个映射，将员工 ID 映射到员工对象，而且建立了一个将不再聘用的所有员工的 ID。
+
+```java
+Map<String, Employee> staffMap = ...;
+Set<String> terainatedlDs = ...;
+```
+
+直接建立一个键集， 并删除终止聘用关系的所有员工的 ID，代码如下：
+
+```java
+staffMap.keySet().removeAll(terminatedIDs) ;
+```
+
+**由于键集是映射的一个视图，所以键和相关联的员工名会自动从映射中删除。**
+
+**通过使用一个子范围视图，可以把批操作限制在子列表和子集上。 **例如，假设希望把一个列表的前10个元素增加到另一个容器，可以建立一个子列表选出前 10 个元素:
+
+```java
+relocated.addAll(staff.subList(0, 10));
+```
+
+这个子范围还可以完成更改操作：
+
+```java
+staff.subList(0, 10).clear();
+```
+
+
+
+#### 9.5.5 集合与数组的转换
+
+由于 Java 平台 API 的大部分内容都是在集合框架创建之前设计的，**所以有时候需要在传统的数组和比较现代的集合之间进行转换**。
+
+**如果需要把一个数组转换为集合，Arrays.asList 包装器可以达到这个目的。** 例如:
+
+```java
+String[] values = ...;
+HashSet<String> staff = new HashSet<>(Arrays.asList(values));
+```
+
+从集合得到数组会更困难一些，可以使用 toArray 方法:
+
+```java
+Object[] values = staff.toArray();
+```
+
+**这样做的结果是一个对象数组**。尽管你知道集合中包含一个特定类型的对象，但**不能使用强制类型转换**:
+
+```java
+String[Q] values = (String[]]) staff.toArray();// Error!
+```
+
+toArray 方法返回的数组是一个 Object[] 数组，不能改变它的类型。**实际上，必须使用 toArray 方法的一个变体形式，提供一个所需类型而且长度为 0 的数组**。这样一来，返回的数组就会创建为相同的数组类型:
+
+```java
+String[] values = staff.toArray(new String[0]);
+```
+
+如果愿意，可以构造一个指定大小的数组:
+
+```java
+staff.toArray(new String[staff.size()]);
+```
+
+**在这种情况下，不会创建新数组。**
+
+你可能奇怪为什么不能直接将一个 Class 对象（如 String.class） 传递到 toArray 方法。原因是这个方法有双重职责，不仅要填充一个已有的数组，还要创建一个新数组。
+
+
+
+#### 9.5.6 编写自己的算法
+
+**以集合作为参数的任何方法，应该尽可能地使用接口，而不要使用具体的实现**。假设想用一组菜单项填充 JMenu。传统上， 这种方法可 能会按照下列方式实现:
+
+```java
+void fillMenu(JMenu menu, ArrayList<JMenuItem> items){
+  for (JMenuItem item : items)
+    menu.add(item);
+}
+```
+
+**这样会限制方法的调用程序，即调用程序必须在 ArrayList 中提供选项**。如果这些选项需要放在另一容器中，首先必须对它们重新包装，因此最好接受更加通用的集合。
+
+什么是完成这项工作的最通用的集合接口？在这里，只需要访问所有的元素。是 Collection 接口的基本功能。下面代码说明了如何重新编写 fillMenu 方法使之接受任意类型的集合:
+
+```java
+void fillMenu(JMenu menu, Collection<JMenuItem> items){
+  for (JMenuItem item : items)
+    menu.add(item);
+}
+```
+
+现在，任何人都可以用ArrayList或LinkedList，甚至用Arrays.asList包装器包装的数组调用这个方法。
+
+>既然将集合接口作为方法参数是个很好的想法，为什么 Java 类库不更多地这样做呢? 例如 JComboBox 有两个构造器:
+>
+>+ JComboBox(Object[] items)
+>+ JComboBox(Vector<?> items)
+>
+>之所以没有这样做，原因很简单: 时间问题。Swing 类库是在集合类库之前创建的。
+
+如果编写了一个返回集合的方法，可能还想要一个返回接口而不是返回类的方法，因为这样做可以在日后改变想法，并用另一个集合重新实现这个方法。
+
+例如，编写一个返回所有菜单项的方法getAllItems:
+
+```java
+List<JMenuItem> getAllItems(JMenu menu){
+  List<JMenuItem> items = new ArrayList<>();
+  for(int i = 0; i < menu.getItemCount(); i++)
+    items.add(menu.getItem(i));
+  return items;
+}
+```
+
+**以后可以做出这样的决定：不复制所有的菜单项，而仅仅提供这些菜单项的视图。 做到这一点只需要返回 AbstractList 的匿名子类：**
+
+```java
+List<JMenuItem> getAllItems(final JMenu menu){
+  return new AbstractList<>(){
+    public JMenuItem get(int i){
+      return menu.getItem(i);
+    }
+    public int size(){
+      return menu.getItemCount();
+    }
+  }
+}
+```
+
+这是一项高级技术，如果使用它，就应该将它支持的那些“ 可选” 操作准确地记录在文档中。在这种情况下，必须提醒调用者返回的对象是一个不可修改的列表。
+
+
+
+### 9.6 遗留的集合
+
+#### 9.6.1 Hashtable 类
+
+Hashtable 类与 HashMap 类的作用一样，实际上它们拥有相同的接口，Hashtable 的方法也是同步的。
+
++ 如果对同步性或与遗留代码的兼容性没有任何要求，就应该使用 HashMap。
++ 如果需要并发访问， 则要使用 ConcurrentHashMap，参见第 14 章。
+
+#### 9.6.2 枚举
+
+遗留集合使用 Enumeration 接口对元素序列进行遍历。 Enumeration 接口有两个方法：即 hasMoreElements 和 nextElement。这两个方法与 Iterator 接口的 hasNext 方法和 next 方法十分类似。
+
+ Hashtable 类的 elements 方法将产生一个用于描述表中各个枚举值的对象:
+
+```java
+Enumeration<Employee> e = staff.elements();
+while(e.hasMoreElements()){
+  Employee e = e.nextElement();
+  ...
+}
+```
+
+有时还会遇到遗留的方法，其参数是枚举类型的。 静态方法 Collections.enumeration 将产生一个枚举对象， 枚举集合中的元素。例如:
+
+```java
+List<InputStream> streams = ...;
+SequenceInutStream in = new SequenceInputStream(Collections.enumeration(streams));
+// the SequencelnputStream constructor expects an enumeration
+```
+
+> 在 C++ 中， 用迭代器作为参数十分普遍。在 Java 的编程平台中， 只有极少的程序员沿用这种习惯。传递集合要比传递迭代器更为明智。 当接受方如果需要时，总是可以从集合中获得迭代器， 还可以随时地使用集合的所有方法。
+
+#### 9.6.3 属性映射
+
+**属性映射(property map)** 是一个类型非常特殊的映射结构。它有下面 3 个特性:
+
++ 键与值都是字符串。
++ 表可以保存到一个文件中， 也可以从文件中加载。 
++ 使用一个默认的辅助表。
+
+#### 9.6.4 栈
+
+标准类库包含 Stack 类， 其中有大家熟悉的 push 方法和 pop 方法。 但是，Stack 类扩展为 Vector 类，从理论角度看， Vector 类并不太令人满意， 它可以让栈使用不属于栈操作的 insert 和 remove 方法， 即可以在任何地方进行插入或删除操作，而不仅仅是在栈顶。
+
+#### 9.6.5 位集
+
+Java 平台的 BitSet 类用于存放一个位序列。**如果需要高效地存储位序列 (例如标志)就可以使用位集**。 由于位集将位包装在字节里，所以使用位集要比使用 Boolean 对象的 ArrayList 更加高效。
+
+BitSet 类提供了一个便于读取、设置或清除各个位的接口。使用这个接口可以避免屏蔽和其他麻烦的位操作。 
+
+对于一个名为 bucketOfBits 的 BitSet：
+
+```java
+bucketOfBits.get(i)
+```
+
+如果第 i 位处于“ 开” 状态， 就返回 true; 否则返回 false。同样地，
+
+```java
+bucketOfBits.set(i)
+```
+
+将第 i 位置为“ 开” 状态。最后，
+
+```java
+bucketOfBits.clear(1)
+```
+
+将第 i 位置为“ 关” 状态。
